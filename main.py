@@ -214,7 +214,60 @@ def send_message():
     except Exception as e:
         logger.error(f"Error en /send_message: {e}")
         return jsonify({'error': str(e)}), 500
-    
+@app.route('/publicarinstagram', methods=['POST'])
+def publicar_instagram():
+    """
+    Publica una publicación en Instagram con caption y una imagen.
+    Body JSON esperado:
+    {
+        "caption": "Texto de la publicación",
+        "image_url": "URL de la imagen"
+    }
+    """
+    try:
+        data = request.get_json(force=True)
+        caption = data.get("caption")
+        image_url = data.get("image_url")
+
+        if not caption or not image_url:
+            return jsonify({"error": "Faltan campos requeridos: caption o image_url"}), 400
+
+        access_token = os.getenv("INSTAGRAM_ACCESS_TOKEN")  # o tu token directo
+        user_id = os.getenv("INSTAGRAM_USER_ID")  # o tu user id directo
+
+        # 1️⃣ Crear el contenedor de media
+        media_url = f"https://graph.instagram.com/{user_id}/media"
+        payload = {
+            "caption": caption,
+            "image_url": image_url,
+            "access_token": access_token
+        }
+        resp = requests.post(media_url, data=payload)
+        resp_json = resp.json()
+
+        if "id" not in resp_json:
+            return jsonify({"error": "No se pudo crear el contenedor de media", "detalle": resp_json}), 500
+
+        creation_id = resp_json["id"]
+
+        # 2️⃣ Publicar la media
+        publish_url = f"https://graph.instagram.com/{user_id}/media_publish"
+        publish_payload = {
+            "creation_id": creation_id,
+            "access_token": access_token
+        }
+        publish_resp = requests.post(publish_url, data=publish_payload)
+        publish_json = publish_resp.json()
+
+        if "id" not in publish_json:
+            return jsonify({"error": "No se pudo publicar la media", "detalle": publish_json}), 500
+
+        # Retornar id de la publicación
+        return jsonify({"publicacion_id": publish_json["id"], "creation_id": creation_id}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
     
 @app.route("/logs")
 def get_logs():
