@@ -1,5 +1,7 @@
 # sender.py
 import logging
+from plataforma_service.facebook import Facebook
+from plataforma_service.instagram import Instagram
 from plataforma_service.whatsapp import WhatsApp
 import re
 
@@ -10,8 +12,8 @@ class Sender:
         """Instancia los servicios de mensajería de cada plataforma."""
         try:
             self.whatsapp = WhatsApp()
-            # self.facebook = Facebook()
-            # self.instagram = Instagram()
+            self.facebook = Facebook()
+            self.instagram = Instagram()
             # self.linkedin = LinkedIn()
             # self.tiktok = TikTok()
             logger.info("Servicios de mensajería inicializados correctamente.")
@@ -52,14 +54,14 @@ class Sender:
                 logger.info("enviado por whatsapp")
 
             # # Facebook
-            # if "facebook" in data and "response" in data["facebook"]:
-            #     message = data["facebook"]["response"]
-            #     results["facebook"] = self.facebook.send_comunicate(message)
+            if "facebook" in data and "response" in data["facebook"]:
+                message = data["facebook"]["response"]
+                results["facebook"] = self.facebook.publicar_texto(message)
 
             # # Instagram
-            # if "instagram" in data and "response" in data["instagram"]:
-            #     message = data["instagram"]["response"]
-            #     results["instagram"] = self.instagram.send_comunicate(message)
+            if "instagram" in data and "response" in data["instagram"]:
+                message = data["instagram"]["response"]
+                results["instagram"] = self.instagram.publicar(caption=message,image_url="https://mrmoviliano.com/wp-content/uploads/2020/01/jfif.jpg")
 
             # # LinkedIn
             # if "linkedin" in data and "response" in data["linkedin"]:
