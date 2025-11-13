@@ -182,11 +182,140 @@ def chatpublicaciones():
         # print(respuesta_ia)
         # results=respuesta_ia
       
-        return jsonify({"resultados del envio ": results}), 200
+        return jsonify({ 
+            "status": results, 
+            "publicaciones": respuesta_ia
+            }), 200
     
     except Exception as e:
-        logger.error(f"Error en webhook: {e}")
+        logger.error(f"Error en Chat : {e}")
         return jsonify({"error": str(e)}), 500
+ 
+ 
+ 
+ 
+def generate_response_ia222(question, historial_texto):
+    
+    try:
+        system_prompt = """
+        Eres un asistente inteligente para la Facultad de Ciencias de la Computación que ayuda a crear publicaciones para redes sociales.
+
+        **TU TAREA:**
+        1. Analizar la intención del usuario
+        2. Determinar si solicita crear publicaciones o es conversación general
+        3. Responder en un formato JSON específico
+
+        **TIPOS DE INTERACCIÓN:**
+
+        A) **CONVERSACIÓN GENERAL** (saludos, preguntas, consultas):
+        - Ejemplos: "hola", "buenos días", "¿qué puedes hacer?", "ayuda", "gracias"
+        - Responde de forma amigable y explica tus capacidades
+
+        B) **SOLICITUD DE PUBLICACIÓN**:
+        - Ejemplos: "crea una publicación sobre...", "necesito post para...", "genera contenido sobre..."
+        - Crea contenido adaptado para cada plataforma
+
+        **FORMATO DE RESPUESTA (CRÍTICO - SOLO RETORNA ESTE JSON):**
+
+        Para CONVERSACIÓN GENERAL:
+        {
+            "status": "conversacion",
+            "mensaje": "Tu respuesta amigable aquí",
+            "haypublicacion": false,
+            "publicaciones": {}
+        }
+
+        Para SOLICITUD DE PUBLICACIÓN:
+        {
+            "status": "publicacion",
+            "mensaje": "He creado publicaciones personalizadas para cada plataforma. ¿Te gustaría modificar alguna?",
+            "haypublicacion": true,
+            "publicaciones": {
+                "facebook": {
+                    "response": "Texto optimizado para Facebook (más extenso, incluye enlaces)"
+                },
+                "instagram": {
+                    "response": "Texto para Instagram (incluye emojis y hashtags relevantes)"
+                },
+                "linkedin": {
+                    "response": "Texto profesional para LinkedIn (tono formal, enfoque académico/profesional)"
+                },
+                "tiktok": {
+                    "response": "Texto corto y dinámico para TikTok (muy visual, hashtags trending)"
+                },
+                "whatsapp": {
+                    "response": "Texto directo para WhatsApp (conversacional, call-to-action claro)"
+                }
+            }
+        }
+
+        **REGLAS IMPORTANTES:**
+        - Adapta el tono y longitud según cada plataforma
+        - Instagram/TikTok: casual, emojis, hashtags
+        - LinkedIn: profesional, educativo
+        - Facebook: equilibrado, puede ser más largo
+        - WhatsApp: directo, conversacional
+        - SOLO retorna el JSON, sin texto adicional antes o después
+        - Si no hay contexto suficiente, pregunta amablemente en el campo "mensaje"
+        """
+                
+        user_prompt = f"""
+        Mensaje del usuario: "{question}"
+
+        Historial reciente: {historial_texto}
+
+        Analiza la intención y responde en el formato JSON correspondiente.
+        """
+
+        # Llamada a OpenAI
+        response = client_opneai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=0.7,
+            max_tokens=1000
+        )
+
+        respuesta_texto = response.choices[0].message.content
+        logger.info(f"Respuesta raw de IA: {respuesta_texto}")
+        
+        parsed = parse_json_relajado(respuesta_texto)
+        
+        # Validar estructura de respuesta
+        if not parsed:
+            logger.warning("No se pudo parsear la respuesta de IA")
+            return {
+                "status": "error",
+                "mensaje": "Lo siento, ocurrió un error al procesar tu solicitud. Por favor, intenta de nuevo.",
+                "haypublicacion": False,
+                "publicaciones": {}
+            }
+        
+        # Asegurar que tenga los campos requeridos
+        if "status" not in parsed:
+            parsed["status"] = "conversacion"
+        if "mensaje" not in parsed:
+            parsed["mensaje"] = "¿En qué puedo ayudarte?"
+        if "haypublicacion" not in parsed:
+            parsed["haypublicacion"] = False
+        if "publicaciones" not in parsed:
+            parsed["publicaciones"] = {}
+        
+        logger.info(f"Respuesta estructurada: {json.dumps(parsed, indent=2)}")
+        return parsed
+
+    except Exception as e:
+        logger.error(f"Error en generate_response_ia: {e}")
+        return {
+            "status": "error",
+            "mensaje": "Lo siento, ocurrió un error al generar la respuesta. Por favor, intenta de nuevo.",
+            "haypublicacion": False,
+            "publicaciones": {}
+        }
+
+ 
  
  
 @app.route('/testjson', methods=['POST'])
