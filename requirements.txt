@@ -6,4 +6,4 @@ psycopg2-binary
 gunicorn 
 requests
 cloudinary
-
+Werkzeug==2.2.3
