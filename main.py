@@ -648,9 +648,9 @@ def publicar_facebook_texto():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/tiktokEosk3Zs3iOjb74AQ3kzKnycoXKlA29UO.txt', methods=['GET'])
+@app.route('/tiktok3GffClh4aVVeakNpIa63P2wyvUSSEoYY.txt', methods=['GET'])
 def serve_tiktok_file():
-    return send_file("tiktokEosk3Zs3iOjb74AQ3kzKnycoXKlA29UO.txt")
+    return send_file("tiktok3GffClh4aVVeakNpIa63P2wyvUSSEoYY.txt")
 
 
 @app.route('/callback', methods=['GET'])
