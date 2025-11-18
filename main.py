@@ -14,7 +14,9 @@ import os
 import logging
 from openai import OpenAI
 from openai import APIConnectionError, AuthenticationError, RateLimitError, APIStatusError
-
+from flask import send_file
+from flask import redirect
+import urllib.parse
 
 from plataforma_service.whatsapp import WhatsApp
 from sender import Sender
@@ -24,6 +26,11 @@ load_dotenv()
 client_opneai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 app = Flask(__name__)
+
+TIKTOK_ACCESS_TOKEN = None
+TIKTOK_REFRESH_TOKEN = None
+TIKTOK_TOKEN_EXPIRES = None
+TIKTOK_REFRESH_EXPIRES = None
 
 logging.basicConfig(
     level=logging.INFO,  
@@ -149,8 +156,8 @@ def generate_response_ia(question,historial_texto):
 
 
 
-@app.route('/chatpublicaciones', methods=['POST'])
-def chatpublicaciones():
+@app.route('/chatpublicaciones2', methods=['POST'])
+def chatpublicaciones2():
 
     data = request.json
     
@@ -160,11 +167,17 @@ def chatpublicaciones():
     
     logger.info(f"idcliente: {cliente}")
     
+    if not cliente:
+            return jsonify({"error": "Falta el campo cliente_id"}), 400
+    
     try:
         # Obtener datos del mensaje
         body = data.get("Body")
      
         logger.warning(f"Mensaje entrante: msg: {body}")
+        
+        if not body or not isinstance(body, str) or body.strip() == "":
+            return jsonify({"error": "El mensaje (Body) es obligatorio y no puede estar vacío."}), 400
        
         respuesta_ia =generate_response_ia(
             
@@ -192,6 +205,69 @@ def chatpublicaciones():
         return jsonify({"error": str(e)}), 500
  
  
+@app.route('/chatpublicaciones', methods=['POST'])
+def chatpublicaciones():
+
+    try:
+        data = request.json
+        if not data:
+            raise Exception("El body del request está vacío.")
+
+        body = data.get("Body")
+        cliente = data.get("cliente_id")
+
+        print(f"Mensaje recibido : {body}")
+        logger.info(f"idcliente: {cliente}")
+
+        # Validar cliente_id
+        if not cliente:
+            raise Exception("Falta el campo cliente_id.")
+
+        # Validar texto Body
+        if not body or not isinstance(body, str) or body.strip() == "":
+            raise Exception("El mensaje (Body) es obligatorio y no puede estar vacío.")
+
+        # Validar longitud
+        MAX_LEN = 1200
+        if len(body) > MAX_LEN:
+            raise Exception(f"El mensaje es demasiado largo. Máximo permitido: {MAX_LEN} caracteres.")
+
+        logger.warning(f"Mensaje entrante: msg: {body}")
+
+        # Generar respuesta IA
+        respuesta_ia = generate_response_ia(
+            question=body,
+            historial_texto="historial_texto"
+        )
+
+        # Validar respuesta IA
+        if (
+            not respuesta_ia 
+            or not isinstance(respuesta_ia, dict)
+            or len(respuesta_ia.keys()) == 0
+        ):
+            raise Exception("La respuesta de IA es vacía o inválida.")
+
+        # Validar que existan las 5 plataformas
+        required_keys = ["instagram", "tiktok", "whatsapp", "facebook", "linkedin"]
+        for key in required_keys:
+            if key not in respuesta_ia:
+                raise Exception(f"Falta la plataforma: {key}")
+            if "response" not in respuesta_ia[key]:
+                raise Exception(f"La plataforma {key} no contiene 'response'")
+
+        # Enviar publicación
+        results = Sender_service.send(respuesta_ia)
+        #results = ""
+        return jsonify({
+            "status": results,
+            "publicaciones": respuesta_ia
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error en Chat : {e}")
+        return jsonify({"error": str(e)}), 400
+
  
  
 def generate_response_ia222(question, historial_texto):
@@ -573,7 +649,97 @@ def publicar_facebook_texto():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route('/tiktokSTo4Zh8BLznHPQSovtA1HMDm3wsa26Af.txt', methods=['GET'])
+def serve_tiktok_file():
+    return send_file("tiktokSTo4Zh8BLznHPQSovtA1HMDm3wsa26Af.txt")
 
+
+@app.route('/callback', methods=['GET'])
+def tiktok_callback():
+    code = request.args.get("code")
+
+    if not code:
+        return "<h2>No llegó el code de TikTok.</h2>"
+
+    try:
+        # Mostrar toda la query como en Node.js
+        query_data = json.dumps(request.args.to_dict(), indent=2)
+
+        params = {
+            "client_key": os.getenv("CLIENT_KEY"),
+            "client_secret": os.getenv("CLIENT_SECRET"),
+            "code": code,
+            "grant_type": "authorization_code",
+            "redirect_uri": os.getenv("REDIRECT_URI")
+        }
+
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+
+        # Petición a TikTok
+        response = requests.post(
+            "https://open.tiktokapis.com/v2/oauth/token/",
+            data=params,
+            headers=headers
+        )
+
+        response_json = response.json()
+        response_data = json.dumps(response_json, indent=2)
+
+        access_token = response_json.get("access_token", "")
+
+        # ============================================================
+        # GUARDAR TOKENS TEMPORALMENTE EN MEMORIA
+        # ============================================================
+        TIKTOK_ACCESS_TOKEN = response_json.get("access_token")
+        TIKTOK_REFRESH_TOKEN = response_json.get("refresh_token")
+        TIKTOK_TOKEN_EXPIRES = response_json.get("expires_in")
+        TIKTOK_REFRESH_EXPIRES = response_json.get("refresh_expires_in")
+
+        print("TOKENS GUARDADOS EN MEMORIA:")
+        
+        # HTML igual que en Node.js
+        html = f"""
+            <h2>Datos de la query recibida</h2>
+            <pre>{query_data}</pre>
+
+            <h2>Respuesta completa de TikTok</h2>
+            <pre>{response_data}</pre>
+
+            <h3>Subir video</h3>
+            <form action="/uploadVideo" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="access_token" value="{access_token}">
+                <input type="file" name="video" accept="video/*">
+                <button type="submit">Subir video a TikTok</button>
+            </form>
+        """
+
+        return html
+
+    except Exception as e:
+        err = json.dumps(str(e), indent=2)
+        return f"<h2>Error obteniendo token</h2><pre>{err}</pre>"
+
+
+#####################login de tiktok###################
+@app.route('/login_tiktok', methods=['GET'])
+def tiktok_login():
+    CLIENT_KEY = os.getenv("CLIENT_KEY")
+    REDIRECT_URI = os.getenv("REDIRECT_URI")
+
+    # Igual que encodeURIComponent
+    redirect_uri_encoded = urllib.parse.quote(REDIRECT_URI, safe='')
+
+    auth_url = (
+        f"https://www.tiktok.com/v2/auth/authorize/"
+        f"?client_key={CLIENT_KEY}"
+        f"&scope=video.upload,video.publish,user.info.basic"
+        f"&response_type=code"
+        f"&redirect_uri={redirect_uri_encoded}"
+    )
+
+    return redirect(auth_url)
     
 @app.route("/logs")
 def get_logs():
