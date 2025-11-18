@@ -653,8 +653,6 @@ def serve_tiktok_file():
     return send_file("tiktokEosk3Zs3iOjb74AQ3kzKnycoXKlA29UO.txt")
 
 
-
-
 @app.route('/callback', methods=['GET'])
 def tiktok_callback():
     code = request.args.get("code")
