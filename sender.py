@@ -2,6 +2,7 @@
 import logging
 from plataforma_service.facebook import Facebook
 from plataforma_service.instagram import Instagram
+from plataforma_service.linkedin import LinkedIn
 from plataforma_service.whatsapp import WhatsApp
 import re
 
@@ -14,7 +15,7 @@ class Sender:
             self.whatsapp = WhatsApp()
             self.facebook = Facebook()
             self.instagram = Instagram()
-            # self.linkedin = LinkedIn()
+            self.linkedin = LinkedIn()
             # self.tiktok = TikTok()
             logger.info("Servicios de mensajería inicializados correctamente.")
         except Exception as e:
@@ -64,9 +65,9 @@ class Sender:
                 results["instagram"] = self.instagram.publicar(caption=message,image_url="https://mrmoviliano.com/wp-content/uploads/2020/01/jfif.jpg")
 
             # # LinkedIn
-            # if "linkedin" in data and "response" in data["linkedin"]:
-            #     message = data["linkedin"]["response"]
-            #     results["linkedin"] = self.linkedin.send_comunicate(message)
+            if "linkedin" in data and "response" in data["linkedin"]:
+                message = data["linkedin"]["response"]
+                results["linkedin"] = self.linkedin.publicar(message)
 
             # # TikTok
             # if "tiktok" in data and "response" in data["tiktok"]:
