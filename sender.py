@@ -22,6 +22,14 @@ class Sender:
         except Exception as e:
             logger.error(f"Error al inicializar los servicios: {e}")
             raise
+        
+        self.platform_urls = {
+                "facebook": "https://www.facebook.com/profile.php?id=61583591706597",
+                "instagram": "https://www.instagram.com/kogamii17/",
+                "linkedin": "https://www.linkedin.com/in/gonzalo-tarqui-ignacio-334087336/",
+                "tiktok": "https://www.tiktok.com/@tiktok_grupo_ficct?lang=es-419"
+            }
+        
     def _clean_text(self, text: str) -> str:
         # Elimina emojis y caracteres no ASCII
         return re.sub(r'[^\x00-\x7F]+', '', text)
@@ -46,37 +54,42 @@ class Sender:
             results = {}
 
             # WhatsApp
-            # if "whatsapp" in data and "response" in data["whatsapp"]:
-            #     message = data["whatsapp"]["response"]
+            if "whatsapp" in data and "response" in data["whatsapp"]:
+                message = data["whatsapp"]["response"]
+                message=self.whatsapp.send_message(message_body=message,to_number="whatsapp:+59167769632")
                 
-                
-            #     message=self.whatsapp.send_message(message_body=message,to_number="whatsapp:+59167769632")
-                
-            #     results["whatsapp"] = message.sid
-            #     logger.info("enviado por whatsapp")
+                results["whatsapp"] = message.sid
+                logger.info("enviado por whatsapp")
 
-            # # # Facebook
-            # if "facebook" in data and "response" in data["facebook"]:
-            #     message = data["facebook"]["response"]
-            #     results["facebook"] = self.facebook.publicar_texto(message)
+            # Facebook
+            if "facebook" in data and "response" in data["facebook"]:
+                message = data["facebook"]["response"]
+                results["facebook"] = self.facebook.publicar_texto(message)
 
-            # # # Instagram
-            # if "instagram" in data and "response" in data["instagram"]:
-            #     message = data["instagram"]["response"]
-            #     results["instagram"] = self.instagram.publicar(caption=message,image_url="https://mrmoviliano.com/wp-content/uploads/2020/01/jfif.jpg")
 
-            # # # LinkedIn
-            # if "linkedin" in data and "response" in data["linkedin"]:
-            #     message = data["linkedin"]["response"]
-            #     results["linkedin"] = self.linkedin.publicar(message)
+            # Instagram
+            if "instagram" in data and "response" in data["instagram"]:
+                message = data["instagram"]["response"]
+                results["instagram"] = self.instagram.publicar(caption=message,image_url="https://mrmoviliano.com/wp-content/uploads/2020/01/jfif.jpg")
 
-            # # TikTok
+
+            # LinkedIn
+            if "linkedin" in data and "response" in data["linkedin"]:
+                message = data["linkedin"]["response"]
+                results["linkedin"] = self.linkedin.publicar(message)
+          
+
+
+            # TikTok
             if "tiktok" in data and "response" in data["tiktok"]:
                 message = data["tiktok"]["response"]
                 #results["tiktok"] = self.tiktok.publicar_imagen_url_old_domain_very( texto=message,imagen_url="https://pagina-de-presentacion3.onrender.com/images/flores.jpg")
                 results["tiktok"] = self.tiktok.publicar_imagen_url( texto=message,imagen_url="https://mrmoviliano.com/wp-content/uploads/2020/01/jfif.jpg")
 
             logger.info("Mensajes enviados a todas las plataformas disponibles.")
+            
+            results["urls"] = self.platform_urls
+            
             return results
 
         except Exception as e:
