@@ -337,21 +337,24 @@ class TikTok:
         # ---------------------------
         # 4️⃣ Eliminar imagen del servidor
         # ---------------------------
-        try:
-            os.remove(os.path.join(IMAGES_FOLDER, filename))
-        except:
-            logger.warning(f"No se pudo eliminar el archivo temporal {filename}")
+        # try:
+        #     os.remove(os.path.join(IMAGES_FOLDER, filename))
+        # except:
+        #     logger.warning(f"No se pudo eliminar el archivo temporal {filename}")
 
         # ---------------------------
         # 5️⃣ Evaluar respuesta de TikTok
         # ---------------------------
-        if "data" not in data or data.get("error", {}).get("code") != "ok":
+        # Validación correcta
+        if "data" not in data or "publish_id" not in data["data"]:
             return {"error": "No se pudo publicar la imagen", "detalle": data}, 400
 
         return {
             "mensaje": "Imagen enviada correctamente",
             "publish_id": data["data"]["publish_id"]
         }, 200
+        
+    
 
     def _guardar_imagen_en_servidor(self, url_imagen: str) -> str:
         """
