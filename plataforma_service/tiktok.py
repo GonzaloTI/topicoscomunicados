@@ -3,8 +3,11 @@ import os
 import time
 import logging
 import requests
-
+from flask import send_file, send_from_directory
+import uuid
 logger = logging.getLogger(__name__)
+
+IMAGES_FOLDER = os.path.join(os.getcwd(), "images")
 
 class TikTok:
     def __init__(self):
@@ -25,7 +28,6 @@ class TikTok:
 
         self.CHUNK_BASE_SIZE = 20 * 1024 * 1024  # 20 MB
         self.MAX_RETRIES = 3
-
     # ============================================================
     # VALIDAR ACCESS TOKEN
     # ============================================================
@@ -228,144 +230,8 @@ class TikTok:
 
         return True
 
-    def publicar_imagen_url(self, imagen_url: str, texto: str):
-        """
-        Descarga y sube imagen directamente con FILE_UPLOAD (sin necesidad de verificar dominio)
-        """
-        import tempfile
-        
-        if not self._validar_access_token():
-            logger.info("Token expirado, refrescando…")
-            self.refresh_token()
-        
-        tmp_image_path = None
-        
-        try:
-            # 1️⃣ Descargar imagen
-            logger.info(f"Descargando imagen desde: {imagen_url}")
-            resp_img = requests.get(imagen_url, stream=True, timeout=30)
-            
-            if resp_img.status_code != 200:
-                return {
-                    "error": "No se pudo descargar la imagen", 
-                    "detalle": resp_img.text
-                }, 400
-            
-            # Guardar temporalmente
-            suffix = os.path.splitext(imagen_url)[-1] or ".jpg"
-            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
-                for chunk in resp_img.iter_content(1024):
-                    tmp_file.write(chunk)
-                tmp_image_path = tmp_file.name
-            
-            file_size = os.path.getsize(tmp_image_path)
-            logger.info(f"Imagen descargada: {tmp_image_path} ({file_size} bytes)")
-            
-            # 2️⃣ INIT - Solicitar upload_url
-            init_url = "https://open.tiktokapis.com/v2/post/publish/content/init/"
-            
-            init_payload = {
-                "post_info": {
-                    "title": texto,
-                    "description": texto,
-                    "disable_comment": False,
-                    "privacy_level": "SELF_ONLY",
-                    "auto_add_music": True
-                },
-                "source_info": {
-                    "source": "FILE_UPLOAD",
-                    "photo_images": [
-                        {
-                            "file_size": file_size
-                        }
-                    ]
-                },
-                "post_mode": "DIRECT_POST",
-                "media_type": "PHOTO"
-            }
-            
-            headers = {
-                "Authorization": f"Bearer {self.access_token}",
-                "Content-Type": "application/json; charset=UTF-8"
-            }
-            
-            logger.info("Solicitando upload_url...")
-            init_resp = requests.post(init_url, json=init_payload, headers=headers)
-            init_data = init_resp.json()
-            
-            logger.info(f"INIT Response: {init_data}")
-            
-            # Validar respuesta INIT
-            if init_data.get("error", {}).get("code") != "ok":
-                return {
-                    "error": "Error en INIT", 
-                    "detalle": init_data
-                }, 400
-            
-            # Verificar que existe upload_url
-            if "data" not in init_data or "photo_upload_urls" not in init_data["data"]:
-                return {
-                    "error": "No se recibió upload_url",
-                    "detalle": init_data
-                }, 400
-            
-            # 3️⃣ UPLOAD - Subir imagen al servidor de TikTok
-            upload_url = init_data["data"]["photo_upload_urls"][0]
-            publish_id = init_data["data"]["publish_id"]
-            
-            logger.info(f"Subiendo imagen a TikTok (publish_id: {publish_id})...")
-            
-            with open(tmp_image_path, 'rb') as img_file:
-                upload_headers = {
-                    "Authorization": f"Bearer {self.access_token}",
-                    "Content-Type": "image/jpeg",
-                    "Content-Length": str(file_size)
-                }
-                
-                upload_resp = requests.put(
-                    upload_url, 
-                    data=img_file, 
-                    headers=upload_headers,
-                    timeout=60
-                )
-                
-                logger.info(f"UPLOAD Status: {upload_resp.status_code}")
-                
-                if upload_resp.status_code not in [200, 201]:
-                    return {
-                        "error": "Error al subir imagen", 
-                        "detalle": upload_resp.text,
-                        "status_code": upload_resp.status_code
-                    }, 400
-            
-            logger.info("✅ Imagen publicada exitosamente")
-            
-            return {
-                "mensaje": "Imagen publicada correctamente",
-                "publish_id": publish_id,
-                "status": "success"
-            }, 200
-            
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error de red: {str(e)}")
-            return {"error": "Error de conexión", "detalle": str(e)}, 500
-            
-        except Exception as e:
-            logger.error(f"Error inesperado: {str(e)}")
-            return {"error": "Error interno", "detalle": str(e)}, 500
-            
-        finally:
-            # Limpiar archivo temporal
-            if tmp_image_path and os.path.exists(tmp_image_path):
-                try:
-                    os.remove(tmp_image_path)
-                    logger.info(f"Archivo temporal eliminado: {tmp_image_path}")
-                except Exception as e:
-                    logger.warning(f"No se pudo eliminar archivo temporal: {e}")
 
-
-
-    def publicar_imagen_url_very(self, imagen_url: str, texto: str):
+    def publicar_imagen_url_old_domain_very(self, imagen_url: str, texto: str):
         """
         Publica una imagen en TikTok usando PULL_FROM_URL con DIRECT_POST.
         """
@@ -411,4 +277,103 @@ class TikTok:
         }, 200
 
 
+    def publicar_imagen_url(self, imagen_url: str, texto: str):
+        """
+        1. Descarga y guarda imagen localmente.
+        2. Genera URL pública verificada.
+        3. Envía a TikTok con PULL_FROM_URL.
+        4. Elimina la imagen del servidor.
+        """
+        # ---------------------------
+        # 1️⃣ Guardar imagen en servidor
+        # ---------------------------
+        try:
+            filename = self._guardar_imagen_en_servidor(imagen_url)
+        except Exception as e:
+            logger.error(f"No se pudo guardar la imagen: {e}")
+            return {"error": "No se pudo descargar/guardar la imagen"}, 400
 
+        # ---------------------------
+        # 2️⃣ Obtener URL pública (tu dominio verificado)
+        # ---------------------------
+        imagen_url_publica = self._obtener_url_publica(filename)
+
+        # ---------------------------
+        # 3️⃣ Publicar en TikTok
+        # ---------------------------
+        if not self._validar_access_token():
+            logger.info("Token expirado, refrescando…")
+            self.refresh_token()
+
+        url = "https://open.tiktokapis.com/v2/post/publish/content/init/"
+
+        payload = {
+            "post_info": {
+                "title": texto,
+                "description": texto,
+                "disable_comment": False,
+                "privacy_level": "SELF_ONLY",
+                "auto_add_music": True
+            },
+            "source_info": {
+                "source": "PULL_FROM_URL",
+                "photo_cover_index": 0,
+                "photo_images": [imagen_url_publica]
+            },
+            "post_mode": "DIRECT_POST",
+            "media_type": "PHOTO"
+        }
+
+        headers = {
+            "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json; charset=UTF-8"
+        }
+
+        resp = requests.post(url, json=payload, headers=headers)
+        data = resp.json()
+
+        logger.info(f"POST IMAGEN RESPONSE: {data}")
+
+        # ---------------------------
+        # 4️⃣ Eliminar imagen del servidor
+        # ---------------------------
+        try:
+            os.remove(os.path.join(IMAGES_FOLDER, filename))
+        except:
+            logger.warning(f"No se pudo eliminar el archivo temporal {filename}")
+
+        # ---------------------------
+        # 5️⃣ Evaluar respuesta de TikTok
+        # ---------------------------
+        if "data" not in data or data.get("error", {}).get("code") != "ok":
+            return {"error": "No se pudo publicar la imagen", "detalle": data}, 400
+
+        return {
+            "mensaje": "Imagen enviada correctamente",
+            "publish_id": data["data"]["publish_id"]
+        }, 200
+
+    def _guardar_imagen_en_servidor(self, url_imagen: str) -> str:
+        """
+        Descarga una imagen desde URL y la guarda en /images con nombre único.
+        Devuelve el nombre del archivo guardado.
+        """
+        resp = requests.get(url_imagen)
+
+        if resp.status_code != 200:
+            raise Exception("No se pudo descargar la imagen desde la URL.")
+
+        extension = ".jpg"
+        filename = f"{uuid.uuid4()}{extension}"
+        filepath = os.path.join(IMAGES_FOLDER, filename)
+
+        with open(filepath, "wb") as f:
+            f.write(resp.content)
+
+        return filename
+
+    def _obtener_url_publica(self, filename: str) -> str:
+        """
+        Genera la URL pública con tu dominio verificado.
+        """
+        return f"https://pagina-de-presentacion3.onrender.com/images/{filename}"

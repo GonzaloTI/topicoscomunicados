@@ -688,7 +688,7 @@ def upload_image():
     file.save(filepath)
 
     # URL pública (ajusta tu dominio real verificado)
-    public_url = f"http://127.0.0.1:5000/images/{filename}"
+    public_url = f"https://pagina-de-presentacion3.onrender.com/images/{filename}"
 
     return jsonify({
         "mensaje": "Imagen subida correctamente",
