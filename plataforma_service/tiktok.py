@@ -260,7 +260,7 @@ class TikTok:
 
         headers = {
             "Authorization": f"Bearer {self.access_token}",
-            "Content-Type": "application/json; charset=UTF-8"
+            "Content-Type": "application/json"
         }
 
         resp = requests.post(url, json=payload, headers=headers)
@@ -268,7 +268,8 @@ class TikTok:
 
         logger.info(f"POST IMAGEN RESPONSE: {data}")
 
-        if "data" not in data or data.get("error", {}).get("code") != "ok":
+        # Validación correcta
+        if "data" not in data or "publish_id" not in data["data"]:
             return {"error": "No se pudo publicar la imagen", "detalle": data}, 400
 
         return {
@@ -326,7 +327,7 @@ class TikTok:
 
         headers = {
             "Authorization": f"Bearer {self.access_token}",
-            "Content-Type": "application/json; charset=UTF-8"
+            "Content-Type": "application/json"
         }
 
         resp = requests.post(url, json=payload, headers=headers)
