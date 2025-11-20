@@ -13,9 +13,10 @@ import os
 import logging
 from openai import OpenAI
 from openai import APIConnectionError, AuthenticationError, RateLimitError, APIStatusError
-from flask import send_file
+from flask import send_file, send_from_directory
 from flask import redirect
 import urllib.parse
+import uuid
 
 from plataforma_service.whatsapp import WhatsApp
 from sender import Sender
@@ -44,6 +45,10 @@ logger = logging.getLogger(__name__)
 
 whatsapp = WhatsApp()
 Sender_service = Sender()
+
+# Carpeta donde se guardan las imágenes
+IMAGES_FOLDER = os.path.join(os.getcwd(), "images")
+os.makedirs(IMAGES_FOLDER, exist_ok=True)
 
 
 import json, re
@@ -646,6 +651,50 @@ def publicar_facebook_texto():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+##tiktok##########################################################################################
+
+@app.route('/images/<filename>')
+def serve_image(filename):
+    return send_from_directory(IMAGES_FOLDER, filename)
+
+@app.route("/upload_image", methods=["POST"])
+def upload_image():
+    """
+    Recibe una imagen por form-data, la guarda en /images
+    y devuelve la URL pública.
+    """
+    if "file" not in request.files:
+        return jsonify({"error": "No se envió ningún archivo"}), 400
+
+    file = request.files["file"]
+
+    if file.filename == "":
+        return jsonify({"error": "Archivo vacío"}), 400
+
+    # Extensión
+    extension = os.path.splitext(file.filename)[1]
+    if extension == "":
+        extension = ".jpg"
+
+    # Crear nombre único
+    filename = f"{uuid.uuid4()}{extension}"
+
+    # Ruta donde se guardará
+    filepath = os.path.join(IMAGES_FOLDER, filename)
+
+    # Guardar archivo
+    file.save(filepath)
+
+    # URL pública (ajusta tu dominio real verificado)
+    public_url = f"http://127.0.0.1:5000/images/{filename}"
+
+    return jsonify({
+        "mensaje": "Imagen subida correctamente",
+        "filename": filename,
+        "url_publica": public_url
+    }), 200
 
 
 @app.route('/tiktok3GffClh4aVVeakNpIa63P2wyvUSSEoYY.txt', methods=['GET'])

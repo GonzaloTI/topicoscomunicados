@@ -3,6 +3,7 @@ import logging
 from plataforma_service.facebook import Facebook
 from plataforma_service.instagram import Instagram
 from plataforma_service.linkedin import LinkedIn
+from plataforma_service.tiktok import TikTok
 from plataforma_service.whatsapp import WhatsApp
 import re
 
@@ -16,7 +17,7 @@ class Sender:
             self.facebook = Facebook()
             self.instagram = Instagram()
             self.linkedin = LinkedIn()
-            # self.tiktok = TikTok()
+            self.tiktok = TikTok()
             logger.info("Servicios de mensajería inicializados correctamente.")
         except Exception as e:
             logger.error(f"Error al inicializar los servicios: {e}")
@@ -70,9 +71,9 @@ class Sender:
                 results["linkedin"] = self.linkedin.publicar(message)
 
             # # TikTok
-            # if "tiktok" in data and "response" in data["tiktok"]:
-            #     message = data["tiktok"]["response"]
-            #     results["tiktok"] = self.tiktok.send_comunicate(message)
+            if "tiktok" in data and "response" in data["tiktok"]:
+                message = data["tiktok"]["response"]
+                results["tiktok"] = self.tiktok.publicar_imagen_url( texto=message,imagen_url="https://pagina-de-presentacion3.onrender.com/images/flores.jpg")
 
             logger.info("Mensajes enviados a todas las plataformas disponibles.")
             return results
