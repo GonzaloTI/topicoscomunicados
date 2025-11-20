@@ -73,8 +73,8 @@ class Sender:
             # # TikTok
             if "tiktok" in data and "response" in data["tiktok"]:
                 message = data["tiktok"]["response"]
-                results["tiktok"] = self.tiktok.publicar_imagen_url_old_domain_very( texto=message,imagen_url="https://pagina-de-presentacion3.onrender.com/images/flores.jpg")
-                #results["tiktok"] = self.tiktok.publicar_imagen_url( texto=message,imagen_url="https://mrmoviliano.com/wp-content/uploads/2020/01/jfif.jpg")
+                #results["tiktok"] = self.tiktok.publicar_imagen_url_old_domain_very( texto=message,imagen_url="https://pagina-de-presentacion3.onrender.com/images/flores.jpg")
+                results["tiktok"] = self.tiktok.publicar_imagen_url( texto=message,imagen_url="https://mrmoviliano.com/wp-content/uploads/2020/01/jfif.jpg")
 
             logger.info("Mensajes enviados a todas las plataformas disponibles.")
             return results

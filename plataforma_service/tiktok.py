@@ -309,7 +309,7 @@ class TikTok:
 
         payload = {
             "post_info": {
-                "title": texto,
+                "title": "Nueva publicacion ficct",
                 "description": texto,
                 "disable_comment": False,
                 "privacy_level": "SELF_ONLY",
