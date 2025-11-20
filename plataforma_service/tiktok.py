@@ -240,10 +240,9 @@ class TikTok:
             self.refresh_token()
 
         url = "https://open.tiktokapis.com/v2/post/publish/content/init/"
-
         payload = {
             "post_info": {
-                "title": texto,
+                "title": "Titulo de Prueba",
                 "description": texto,
                 "disable_comment": False,
                 "privacy_level": "SELF_ONLY",
