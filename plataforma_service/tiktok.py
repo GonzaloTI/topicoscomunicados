@@ -153,7 +153,7 @@ class TikTok:
 
         payload = {
             "post_info": {
-                "title": "Video desde API Python",
+                "title": "Nuevo Comunicado",
                 "privacy_level": "SELF_ONLY"
             },
             "source_info": {
