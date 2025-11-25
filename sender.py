@@ -74,8 +74,18 @@ class Sender:
                     )
                     # print("URL Runway:", imagen_result["runway_url"])
                     # print("URL pública API:", imagen_result["public_url"])
+                    
+                    imagen_local_path=imagen_result.get("public_url")
+                                       
                     imagen_public_url = imagen_result.get("runway_url")
                     results["generated_image"] = imagen_result
+                    
+                    results["image_url"] = {
+                                "public_url": imagen_public_url,
+                                "runway_url": imagen_result.get("runway_url"),
+                                "local_path": imagen_local_path
+                                                }
+                    
                     logger.info(f"Imagen generada correctamente: {imagen_public_url}")
                 except Exception as e:
                     logger.error(f"Error generando imagen con ImageGenerator: {e}")
@@ -101,6 +111,12 @@ class Sender:
                     )
                     video_local_path = video_result.get("local_path")  # <- usamos el path local
                     results["generated_video"] = video_result
+                    
+                    results["video_url"] = {
+                    "public_url": video_result.get("public_url"),
+                    "runway_url": video_result.get("runway_url"),
+                    "local_path": video_local_path
+                }
                     logger.info(f"Video generado correctamente en: {video_local_path}")
                 except Exception as e:
                     logger.error(f"Error generando video con VideoGenerator: {e}")
@@ -108,13 +124,13 @@ class Sender:
                 logger.warning("No se encontró texto para generar video (prompt_video es None).")
 
 
-            # WhatsApp
-            # if "whatsapp" in data and "response" in data["whatsapp"]:
-            #     message = data["whatsapp"]["response"]
-            #     message=self.whatsapp.send_message(message_body=message,to_number="whatsapp:+59167769632")
+            # # WhatsApp
+            # # if "whatsapp" in data and "response" in data["whatsapp"]:
+            # #     message = data["whatsapp"]["response"]
+            # #     message=self.whatsapp.send_message(message_body=message,to_number="whatsapp:+59167769632")
                 
-            #     results["whatsapp"] = message.sid
-            #     logger.info("enviado por whatsapp")
+            # #     results["whatsapp"] = message.sid
+            # #     logger.info("enviado por whatsapp")
                 
             if "whatsapp" in data and "response" in data["whatsapp"]:
                 message = data["whatsapp"]["response"]

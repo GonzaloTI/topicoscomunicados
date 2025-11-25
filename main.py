@@ -5,7 +5,7 @@ import json, re
 import time
 import requests
 from twilio.rest import Client
-from flask import Flask, Response, json, jsonify, request
+from flask import Flask, Response, json, jsonify, request, render_template
 import psycopg2
 from twilio.twiml.messaging_response import MessagingResponse
 from dotenv import load_dotenv
@@ -14,18 +14,26 @@ import logging
 from openai import OpenAI
 from openai import APIConnectionError, AuthenticationError, RateLimitError, APIStatusError
 from flask import send_file, send_from_directory
-from flask import redirect
+from flask import redirect, g
 import urllib.parse
 import uuid
+from functools import wraps
+import jwt
 
 from plataforma_service.whatsapp import WhatsApp
 from sender import Sender
+from sqlite import SQLiteUserDB
 
 load_dotenv()
 
 client_opneai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 app = Flask(__name__)
+
+
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "cambia-esta-clave-por-una-fuerte")
+
+db = SQLiteUserDB()
 
 TIKTOK_ACCESS_TOKEN = None
 TIKTOK_REFRESH_TOKEN = None
@@ -49,6 +57,8 @@ Sender_service = Sender()
 # Carpeta donde se guardan las imágenes
 IMAGES_FOLDER = os.path.join(os.getcwd(), "images")
 os.makedirs(IMAGES_FOLDER, exist_ok=True)
+VIDEO_FOLDER = os.path.join(os.getcwd(), "videos")
+os.makedirs(VIDEO_FOLDER, exist_ok=True)
 
 
 import json, re
@@ -156,7 +166,103 @@ def generate_response_ia(question,historial_texto):
         return "Lo siento, ocurrió un error al generar la respuesta."
     finally:
         pass
-        
+       
+     
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get("Authorization", None)
+
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return jsonify({
+                "error": "Token requerido. Usa el header Authorization: Bearer <token>"
+            }), 401
+
+        token = auth_header.split(" ", 1)[1]
+
+        try:
+            data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+            # Guardamos el usuario autenticado en `g`
+            g.current_user = {
+                "user": data["user"],
+                "cliente_id": data["cliente_id"]
+            }
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token expirado"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Token inválido"}), 401
+
+        return f(*args, **kwargs)
+    return decorated
+  
+
+@app.route("/login", methods=["POST"])
+def login():
+    """
+    Body esperado:
+    {
+        "username": "admin",
+        "password": "admin123"
+    }
+
+    Respuesta:
+    {
+        "user": "admin",
+        "cliente_id": "1",
+        "token": "<jwt>"
+    }
+    """
+    try:
+        data = request.get_json(force=True)
+        username = data.get("username")
+        password = data.get("password")
+
+        if not username or not password:
+            return jsonify({"error": "username y password son obligatorios"}), 400
+
+        # Buscar usuario en SQLite
+        user = db.get_user(username)
+        if not user:
+            return jsonify({"error": "Credenciales inválidas"}), 401
+
+        # Validar password
+        if not db.validate_password(user["password"], password):
+            return jsonify({"error": "Credenciales inválidas"}), 401
+
+        # Payload del token
+        payload = {
+            "user": user["username"],
+            "cliente_id": user["cliente_id"]
+        }
+
+        # Generar token JWT
+        token = jwt.encode(payload, app.config["SECRET_KEY"], algorithm="HS256")
+        if isinstance(token, bytes):  # por compatibilidad con algunas versiones
+            token = token.decode("utf-8")
+
+        return jsonify({
+            "user": user["username"],
+            "cliente_id": user["cliente_id"],
+            "token": token
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error en /login: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+  
+ 
+@app.route("/")
+def chat_ui():
+    """
+    Front.
+    """
+    return render_template("chatpublicaciones.html")
+
+@app.route("/login-ui")
+def login_ui():
+    return render_template("login.html")
 
 
 
@@ -658,6 +764,12 @@ def publicar_facebook_texto():
 @app.route('/images/<filename>')
 def serve_image(filename):
     return send_from_directory(IMAGES_FOLDER, filename)
+
+@app.route('/videos/<filename>')
+def serve_videos(filename):
+    return send_from_directory(VIDEO_FOLDER, filename)
+
+
 
 @app.route("/upload_image", methods=["POST"])
 def upload_image():

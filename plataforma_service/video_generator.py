@@ -11,7 +11,8 @@ class VideoGenerator:
         self,
         api_key: str | None = None,
         output_folder: str = "videos",
-        public_base_url: str = "https://pagina-de-presentacion3.onrender.com/videos"
+        #public_base_url: str = "https://pagina-de-presentacion3.onrender.com/videos"
+        public_base_url: str = "http://127.0.0.1:5000/videos"
     ):
         """
         api_key:        API key de Runway. Si no se pasa, toma RUNWAYML_API_SECRET del .env
