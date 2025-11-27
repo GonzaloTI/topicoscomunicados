@@ -11,8 +11,8 @@ class VideoGenerator:
         self,
         api_key: str | None = None,
         output_folder: str = "videos",
-        #public_base_url: str = "https://pagina-de-presentacion3.onrender.com/videos"
-        public_base_url: str = "http://127.0.0.1:5000/videos"
+        public_base_url: str = "https://pagina-de-presentacion3.onrender.com/videos"
+        #public_base_url: str = "http://127.0.0.1:5000/videos"
     ):
         """
         api_key:        API key de Runway. Si no se pasa, toma RUNWAYML_API_SECRET del .env
@@ -58,23 +58,30 @@ class VideoGenerator:
         if not prompt_text:
             raise ValueError("prompt_text no puede estar vacío.")
 
-        # 1) Crear tarea en Runway
-        task_id = self._crear_tarea_video(
-            prompt_text=prompt_text,
-            duration=duration,
-            ratio=ratio,
-            model=model,
-            audio=audio,
-        )
+        # # 1) Crear tarea en Runway
+        # task_id = self._crear_tarea_video(
+        #     prompt_text=prompt_text,
+        #     duration=duration,
+        #     ratio=ratio,
+        #     model=model,
+        #     audio=audio,
+        # )
 
-        # 2) Esperar a que termine
-        runway_url = self._esperar_y_obtener_url(task_id)
+        # # 2) Esperar a que termine
+        # runway_url = self._esperar_y_obtener_url(task_id)
 
-        # 3) Guardar video en tu servidor
-        saved_filename = self._guardar_video_en_servidor(runway_url, filename=filename)
+        # # 3) Guardar video en tu servidor
+        # saved_filename = self._guardar_video_en_servidor(runway_url, filename=filename)
 
-        # 4) Construir URL pública
-        public_url = self._obtener_url_publica(saved_filename)
+        # # 4) Construir URL pública
+        # public_url = self._obtener_url_publica(saved_filename)
+        
+        runway_url="videolocal"
+        
+        public_url="desderender"
+        
+        saved_filename = "88c1735d-792b-4fac-961d-c53812154042.mp4"
+        
         
         # 5) Construir ruta local absoluta
         local_path = os.path.join(self.output_folder, saved_filename)

@@ -64,34 +64,35 @@ class Sender:
             
             
             # ===================== IMAGEN =====================
-            if "instagram" in data and "response" in data["instagram"]:
-                prompt_imagen = data["instagram"]["response"]
+            # if "instagram" in data and "response" in data["instagram"]:
+            #     prompt_imagen = data["instagram"]["response"]
             
-            if prompt_imagen:
-                try:
-                    imagen_result = self.imagen_generator.generate_image(
-                        prompt_text=prompt_imagen
-                    )
-                    # print("URL Runway:", imagen_result["runway_url"])
-                    # print("URL pública API:", imagen_result["public_url"])
+            # if prompt_imagen:
+            #     try:
+            #         imagen_result = self.imagen_generator.generate_image(
+            #             prompt_text=prompt_imagen
+            #         )
+            #         # print("URL Runway:", imagen_result["runway_url"])
+            #         # print("URL pública API:", imagen_result["public_url"])
                     
-                    imagen_local_path=imagen_result.get("public_url")
+            #         imagen_local_path=imagen_result.get("public_url")
                                        
-                    imagen_public_url = imagen_result.get("runway_url")
-                    results["generated_image"] = imagen_result
+            #         imagen_public_url = imagen_result.get("runway_url")
+            #         results["generated_image"] = imagen_result
                     
-                    results["image_url"] = {
-                                "public_url": imagen_public_url,
-                                "runway_url": imagen_result.get("runway_url"),
-                                "local_path": imagen_local_path
-                                                }
+            #         results["image_url"] = {
+            #                     "public_url": imagen_public_url,
+            #                     "runway_url": imagen_result.get("runway_url"),
+            #                     "local_path": imagen_local_path
+            #                                     }
                     
-                    logger.info(f"Imagen generada correctamente: {imagen_public_url}")
-                except Exception as e:
-                    logger.error(f"Error generando imagen con ImageGenerator: {e}")
-            else:
-                logger.warning("No se encontró texto para generar imagen (prompt_imagen es None).")
-                
+            #         logger.info(f"Imagen generada correctamente: {imagen_public_url}")
+            #     except Exception as e:
+            #         logger.error(f"Error generando imagen con ImageGenerator: {e}")
+            # else:
+            #     logger.warning("No se encontró texto para generar imagen (prompt_imagen es None).")
+            
+            imagen_public_url="https://pagina-de-presentacion3.onrender.com/images/8af7914d-7573-4f34-a90b-a8514407ba5c.jpg"
             
             # ===================== VIDEO =====================
             if "tiktok" in data and "response" in data["tiktok"]:
@@ -136,7 +137,7 @@ class Sender:
                 message = data["whatsapp"]["response"]
                 #response_whapi=self.whatsappwhapi.send_story_media(caption=message,media="https://mrmoviliano.com/wp-content/uploads/2020/01/jfif.jpg")
                 response_whapi=self.whatsappwhapi.send_story_media(caption=message,media=imagen_public_url)
-
+                
                 results["whatsapp"] = response_whapi['message']['id']
                 logger.info("enviado por whatsapp")
 

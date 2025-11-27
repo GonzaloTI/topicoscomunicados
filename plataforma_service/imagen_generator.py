@@ -11,8 +11,8 @@ class ImageGenerator:
         self,
         api_key: str | None = None,
         output_folder: str = "images",
-        #public_base_url: str = "https://pagina-de-presentacion3.onrender.com/images"
-        public_base_url: str = "http://127.0.0.1:5000/images"
+        public_base_url: str = "https://pagina-de-presentacion3.onrender.com/images"
+        #public_base_url: str = "http://127.0.0.1:5000/images"
     ):
         
         load_dotenv()
