@@ -92,8 +92,8 @@ class Sender:
             # else:
             #     logger.warning("No se encontró texto para generar imagen (prompt_imagen es None).")
             
-            imagen_public_url="https://mrmoviliano.com/wp-content/uploads/2020/01/jfif.jpg"
-            
+            imagen_public_url="https://pagina-de-presentacion3.onrender.com/images/8af7914d-7573-4f34-a90b-a8514407ba5c.jpg"
+           
             # ===================== VIDEO =====================
             # if "tiktok" in data and "response" in data["tiktok"]:
             #     prompt_video = data["tiktok"]["response"]
