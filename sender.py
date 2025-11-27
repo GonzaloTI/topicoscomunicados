@@ -133,13 +133,13 @@ class Sender:
             # #     results["whatsapp"] = message.sid
             # #     logger.info("enviado por whatsapp")
                 
-            if "whatsapp" in data and "response" in data["whatsapp"]:
-                message = data["whatsapp"]["response"]
-                #response_whapi=self.whatsappwhapi.send_story_media(caption=message,media="https://mrmoviliano.com/wp-content/uploads/2020/01/jfif.jpg")
-                response_whapi=self.whatsappwhapi.send_story_media(caption=message,media=imagen_public_url)
+            # if "whatsapp" in data and "response" in data["whatsapp"]:
+            #     message = data["whatsapp"]["response"]
+            #     #response_whapi=self.whatsappwhapi.send_story_media(caption=message,media="https://mrmoviliano.com/wp-content/uploads/2020/01/jfif.jpg")
+            #     response_whapi=self.whatsappwhapi.send_story_media(caption=message,media=imagen_public_url)
                 
-                results["whatsapp"] = response_whapi['message']['id']
-                logger.info("enviado por whatsapp")
+            #     results["whatsapp"] = response_whapi['message']['id']
+            #     logger.info("enviado por whatsapp")
 
 
             # # # Facebook
@@ -154,10 +154,10 @@ class Sender:
                 message = data["instagram"]["response"]
                 results["instagram"] = self.instagram.publicar(caption=message,image_url=imagen_public_url)
 
-            # # LinkedIn
-            if "linkedin" in data and "response" in data["linkedin"]:
-                message = data["linkedin"]["response"]
-                results["linkedin"] = self.linkedin.publicar(message)
+            # # # LinkedIn
+            # if "linkedin" in data and "response" in data["linkedin"]:
+            #     message = data["linkedin"]["response"]
+            #     results["linkedin"] = self.linkedin.publicar(message)
           
 
 
