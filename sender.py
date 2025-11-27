@@ -95,34 +95,34 @@ class Sender:
             imagen_public_url="https://pagina-de-presentacion3.onrender.com/images/8af7914d-7573-4f34-a90b-a8514407ba5c.jpg"
             
             # ===================== VIDEO =====================
-            if "tiktok" in data and "response" in data["tiktok"]:
-                prompt_video = data["tiktok"]["response"]
+            # if "tiktok" in data and "response" in data["tiktok"]:
+            #     prompt_video = data["tiktok"]["response"]
 
-            if prompt_video:
-                try:
-                    # ESTE ES EL PUNTO CLAVE:
-                    # generate_video retorna:
-                    # {
-                    #   "runway_url": runway_url,
-                    #   "public_url": public_url,
-                    #   "local_path": local_path,
-                    # }
-                    video_result = self.video_generator.generate_video(
-                        prompt_text=prompt_video
-                    )
-                    video_local_path = video_result.get("local_path")  # <- usamos el path local
-                    results["generated_video"] = video_result
+            # if prompt_video:
+            #     try:
+            #         # ESTE ES EL PUNTO CLAVE:
+            #         # generate_video retorna:
+            #         # {
+            #         #   "runway_url": runway_url,
+            #         #   "public_url": public_url,
+            #         #   "local_path": local_path,
+            #         # }
+            #         video_result = self.video_generator.generate_video(
+            #             prompt_text=prompt_video
+            #         )
+            #         video_local_path = video_result.get("local_path")  # <- usamos el path local
+            #         results["generated_video"] = video_result
                     
-                    results["video_url"] = {
-                    "public_url": video_result.get("public_url"),
-                    "runway_url": video_result.get("runway_url"),
-                    "local_path": video_local_path
-                }
-                    logger.info(f"Video generado correctamente en: {video_local_path}")
-                except Exception as e:
-                    logger.error(f"Error generando video con VideoGenerator: {e}")
-            else:
-                logger.warning("No se encontró texto para generar video (prompt_video es None).")
+            #         results["video_url"] = {
+            #         "public_url": video_result.get("public_url"),
+            #         "runway_url": video_result.get("runway_url"),
+            #         "local_path": video_local_path
+            #     }
+            #         logger.info(f"Video generado correctamente en: {video_local_path}")
+            #     except Exception as e:
+            #         logger.error(f"Error generando video con VideoGenerator: {e}")
+            # else:
+            #     logger.warning("No se encontró texto para generar video (prompt_video es None).")
 
 
             # # WhatsApp
@@ -163,19 +163,19 @@ class Sender:
 
             # TikTok
             
-            if "tiktok" in data and "response" in data["tiktok"]:
-                message = data["tiktok"]["response"]
+            # if "tiktok" in data and "response" in data["tiktok"]:
+            #     message = data["tiktok"]["response"]
                 
-                #results["tiktok"] = self.tiktok.publicar_imagen_url_old_domain_very( texto=message,imagen_url="https://pagina-de-presentacion3.onrender.com/images/flores.jpg")
-                #results["tiktok"] = self.tiktok.publicar_imagen_url( texto=message,imagen_url="https://mrmoviliano.com/wp-content/uploads/2020/01/jfif.jpg")
-                if video_local_path:
-                    results["tiktok"] = self.tiktok.publicar(video_path=video_local_path)
-                else:
-                    logger.info("No se generó video (video_local_path es None), no se publica en TikTok.")
+            #     #results["tiktok"] = self.tiktok.publicar_imagen_url_old_domain_very( texto=message,imagen_url="https://pagina-de-presentacion3.onrender.com/images/flores.jpg")
+            #     #results["tiktok"] = self.tiktok.publicar_imagen_url( texto=message,imagen_url="https://mrmoviliano.com/wp-content/uploads/2020/01/jfif.jpg")
+            #     if video_local_path:
+            #         results["tiktok"] = self.tiktok.publicar(video_path=video_local_path)
+            #     else:
+            #         logger.info("No se generó video (video_local_path es None), no se publica en TikTok.")
 
-            logger.info("Mensajes enviados a todas las plataformas disponibles.")
+            # logger.info("Mensajes enviados a todas las plataformas disponibles.")
             
-            results["urls"] = self.platform_urls
+            # results["urls"] = self.platform_urls
             
             return results
 
